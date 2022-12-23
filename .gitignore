@@ -179,5 +179,10 @@ cython_debug/
 # Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
 poetry.toml
 
+#Ignore the pie and bar charts
+charts/pie.png
+read/bar.png
+read/pie.png
+
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python

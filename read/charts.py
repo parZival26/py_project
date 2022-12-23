@@ -12,12 +12,12 @@ def generate_pie_chart(labels, values):
     # plt.close()
     plt.show()
 
-def generate_bar_chart(labels, values):
+def generate_bar_chart(name, labels, values):
    fig, ax = plt.subplots()
    ax.bar(labels, values)
-    # plt.savefig('cahrt.png')
-    # plt.close()
-   plt.show()
+   plt.savefig(f'{name}.png')
+   plt.close()
+#    plt.show()
    
 
 

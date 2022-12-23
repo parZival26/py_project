@@ -9,10 +9,12 @@ def graph_population():
     charts.generate_pie_chart(labels, values)
 
 def graph_country_history():
-    new_dict = utils.history_population(data)
+    new_tuple = utils.history_population(data)
+    new_dict = new_tuple[0]
     labels = new_dict.keys()
     values = new_dict.values()
-    charts.generate_bar_chart(labels, values)
+    pais = new_tuple[1]
+    charts.generate_bar_chart(pais, labels, values)
 
 def run():
     elige = int(input("""Bienvenido al graficador de pobalcion

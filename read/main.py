@@ -1,15 +1,17 @@
 import utils
 import charts
 import read_csv
+import pandas as pd
 
 data = read_csv.read_csv('./data.csv')
+df = pd.read_csv('./data.csv')
 
 def graph_population():
-    labels, values = utils.global_populations(data)
+    labels, values = utils.global_populations(df)
     charts.generate_pie_chart(labels, values)
 
 def graph_country_history():
-    new_tuple = utils.history_population(data)
+    new_tuple = utils.history_population(df)
     new_dict = new_tuple[0]
     labels = new_dict.keys()
     values = new_dict.values()

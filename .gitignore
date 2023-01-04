@@ -184,6 +184,7 @@ charts/pie.png
 read/bar.png
 read/pie.png
 read/*.png
+app/*.png
 
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python

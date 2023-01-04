@@ -1,0 +1,11 @@
+services:
+  web-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - '80:80'
+    
+#nota: para iniciar docker usar este comando "sudo chown $(whoami):$(whoami) /var/run/docker.sock"

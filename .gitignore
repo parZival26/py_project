@@ -186,5 +186,8 @@ read/pie.png
 read/*.png
 app/*.png
 
+#Ignore img
+my_movie_api/static/img/*.png
+my_movie_api/static/img/*.jpg
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python

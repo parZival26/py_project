@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request, Body, Path, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -55,27 +55,27 @@ movies = [
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
-@app.get('/movies', tags = ['Movies'])
-def get_moives():
-    return movies
+@app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200)
+def get_moives() -> List[Movie]:
+    return JSONResponse(status_code = 200, content=movies)
 
-@app.get('/movies/{id}', tags = ['Movies'])
-def get_movie(id: int = Path(ge= 1, le=2000)):
+@app.get('/movies/{id}', tags = ['Movies'], response_model = Movie)
+def get_movie(id: int = Path(ge= 1, le=2000)) -> Movie:
 	movie = list(filter(lambda m: m["id"] == id, movies))
-	return movie if len(movie) > 0 else {"message": "Movie not found"}
+	return JSONResponse(content=movie) if len(movie) > 0 else JSONResponse(status_code= 404,content={"message": "Movie not found"})
 
-@app.get('/movies/', tags = ['Movies'])
-def get_movie_category(category: str = Query(max_length=30)):
+@app.get('/movies/', tags = ['Movies'], response_model = Movie)
+def get_movie_category(category: str = Query(max_length=30)) -> Movie:
 	movie = list(filter(lambda x: x["category"] == category, movies))
-	return movie
+	return JSONResponse(content=movie) if len(movie) > 0 else JSONResponse(status_code= 404,content= {"message": "Movie not found"})
 
-@app.post('/movies/', tags = ['Movies'])
-def create_movie(movie: Movie):
+@app.post('/movies/', tags = ['Movies'], response_model = dict, status_code= 201)
+def create_movie(movie: Movie) -> dict:
 	movies.append(movie)
-	return movies
+	return JSONResponse(status_code = 201, content={"message": "Movie created successfully"})
 
-@app.put('/movies/{id}', tags=['Movies'])
-def modify_movies(id: int, movie: Movie):
+@app.put('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)
+def modify_movies(id: int, movie: Movie) -> dict:
 	for i in movies:
 		if i["id"] == id:
 			i["title"] = movie.title
@@ -83,15 +83,15 @@ def modify_movies(id: int, movie: Movie):
 			i["year"] = movie.year
 			i["rating"] = movie.rating
 			i["category"] = movie.category
-			return movies
+			return JSONResponse(status_code = 200, content = movies)
 		else:
-			return {"message": "Movie not found"}
+			return JSONResponse(status_code = 404, content = {"message": "Movie not found"})
 
-@app.delete('/movies/{id}', tags=['Movies'])
-def delete_movie(id: int):
+@app.delete('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)
+def delete_movie(id: int) -> dict:
 	for i in movies:
 		if i['id'] == id:
 			movies.remove(i)
-			return movies, {'movie deleted'}
+			return JSONResponse(status_code = 200, content = {'movie deleted'})
 		else:
-			return {"message": "Movie not found"}
+			return JSONResponse(status_code = 404, content = {"message": "Movie not found"})

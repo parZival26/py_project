@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Body
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 app = FastAPI()
@@ -14,11 +14,23 @@ templates = Jinja2Templates(directory="templates")
 
 class Movie(BaseModel):
 	id: Optional[int] = None
-	title: str
-	overview: str 
-	year: int
-	rating: float
-	category: str
+	title: str = Field(max_length=15, min_length=1)
+	overview: str = Field(max_length=50, min_length=5)
+	year: int = Field(le=2023)
+	rating: float = Field(ge=1, le=10)
+	category: str = Field(max_length=30)
+
+	class Config:
+         schema_extra = {
+			"example":{
+				"id": 0,
+                "title": "My movie",
+				"overview": "Description of the movie",
+				"year": 2023,
+				"rating": 10,
+				"category": "Familiar"
+			}
+		 }
 
 movies = [
     {

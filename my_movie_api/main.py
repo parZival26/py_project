@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Body
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -10,12 +12,20 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+class Movie(BaseModel):
+	id: Optional[int] = None
+	title: str
+	overview: str 
+	year: int
+	rating: float
+	category: str
+
 movies = [
     {
 		"id": 1,
 		"title": "Avatar",
 		"overview": "En un exuberante planeta llamado Pandora viven los Na'vi, seres que ...",
-		"year": "2009",
+		"year": 2009,
 		"rating": 7.8,
 		"category": "Acción"
 	},
@@ -23,7 +33,7 @@ movies = [
 		"id": 2,
 		"title": "Avatar",
 		"overview": "En un exuberante planeta llamado Pandora viven los Na'vi, seres que ...",
-		"year": "2009",
+		"year": 2009,
 		"rating": 7.8,
 		"category": "Acción"
 	}
@@ -36,3 +46,40 @@ async def home(request: Request):
 @app.get('/movies', tags = ['Movies'])
 def get_moives():
     return movies
+
+@app.get('/movies/{id}', tags = ['Movies'])
+def get_movie(id: int):
+	movie = list(filter(lambda m: m["id"] == id, movies))
+	return movie if len(movie) > 0 else {"message": "Movie not found"}
+
+@app.get('/movies/', tags = ['Movies'])
+def get_movie_category(category: str, year: int):
+	movie = list(filter(lambda x: x["category"] == category and x["year"] == year, movies))
+	return movie
+
+@app.post('/movies/', tags = ['Movies'])
+def create_movie(movie: Movie):
+	movies.append(movie)
+	return movies
+
+@app.put('/movies/{id}', tags=['Movies'])
+def modify_movies(id: int, movie: Movie):
+	for i in movies:
+		if i["id"] == id:
+			i["title"] = movie.title
+			i["overview"] = movie.overview
+			i["year"] = movie.year
+			i["rating"] = movie.rating
+			i["category"] = movie.category
+			return movies
+		else:
+			return {"message": "Movie not found"}
+
+@app.delete('/movies/{id}', tags=['Movies'])
+def delete_movie(id: int):
+	for i in movies:
+		if i['id'] == id:
+			movies.remove(i)
+			return movies, {'movie deleted'}
+		else:
+			return {"message": "Movie not found"}

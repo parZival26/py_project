@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Body
+from fastapi import FastAPI, Request, Body, Path, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -60,13 +60,13 @@ def get_moives():
     return movies
 
 @app.get('/movies/{id}', tags = ['Movies'])
-def get_movie(id: int):
+def get_movie(id: int = Path(ge= 1, le=2000)):
 	movie = list(filter(lambda m: m["id"] == id, movies))
 	return movie if len(movie) > 0 else {"message": "Movie not found"}
 
 @app.get('/movies/', tags = ['Movies'])
-def get_movie_category(category: str, year: int):
-	movie = list(filter(lambda x: x["category"] == category and x["year"] == year, movies))
+def get_movie_category(category: str = Query(max_length=30)):
+	movie = list(filter(lambda x: x["category"] == category, movies))
 	return movie
 
 @app.post('/movies/', tags = ['Movies'])

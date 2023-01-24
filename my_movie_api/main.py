@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request, Body, Path, Query
+from fastapi import FastAPI, Request, Body, Path, Query, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from jwt_manager import create_token
+from jwt_manager import create_token, validate_token
+from fastapi.security import HTTPBearer
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -12,6 +13,13 @@ app.version = "0.0.1"
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+class JWTBearer(HTTPBearer):
+	async def __call__(self, request: Request) :
+		auth = await super().__call__(request)
+		data = validate_token(auth.credentials)
+		if data['email'] != "admin@gmail.com" :
+			raise HTTPException(status_code=403, detail="Invalid Credentials")
 
 class User(BaseModel):
 	email:str
@@ -66,9 +74,9 @@ def login(user: User):
 		token: str = create_token(user.dict())
 		return JSONResponse(content=token, status_code=200)
 	else:
-		return JSONResponse(status_code=401, content={"message": "Invalid user or password"})
+		return JSONResponse(content={"message": "Invalid credentials"})
 
-@app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200)
+@app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200, dependencies=[Depends(JWTBearer())])
 def get_moives() -> List[Movie]:
     return JSONResponse(status_code = 200, content=movies)
 

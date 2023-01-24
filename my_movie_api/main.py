@@ -62,7 +62,11 @@ async def home(request: Request):
 
 @app.post('/login', tags=['auth'])
 def login(user: User):
-    return user
+	if user.email == "admin@gmail.com" and user.password == "admin":
+		token: str = create_token(user.dict())
+		return JSONResponse(content=token, status_code=200)
+	else:
+		return JSONResponse(status_code=401, content={"message": "Invalid user or password"})
 
 @app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200)
 def get_moives() -> List[Movie]:

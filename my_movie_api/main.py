@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from jwt_manager import create_token
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -11,6 +12,10 @@ app.version = "0.0.1"
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+class User(BaseModel):
+	email:str
+	password:str
 
 class Movie(BaseModel):
 	id: Optional[int] = None
@@ -54,6 +59,10 @@ movies = [
 @app.get('/', tags = ['Home'])
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
+
+@app.post('/login', tags=['auth'])
+def login(user: User):
+    return user
 
 @app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200)
 def get_moives() -> List[Movie]:

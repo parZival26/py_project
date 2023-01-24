@@ -18,3 +18,14 @@ source env/bin/activate
 pip3 install -r requirements.txt
 python3 main.py
 ```
+# My movie api
+Un pequeño proyecto usando FasAPI:
+
+```sh
+git clone
+cd my_movie_api
+python3 -m venv env
+source env/bin/activate
+pip3 install -r requirements.txt
+uvicorn main:app --reload
+```

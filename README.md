@@ -19,7 +19,8 @@ pip3 install -r requirements.txt
 python3 main.py
 ```
 # My movie api
-Un pequeño proyecto usando FasAPI:
+Un pequeño proyecto usando FasAPI
+pasos:
 
 ```sh
 git clone

@@ -6,11 +6,15 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
+from config.database import Session, engine, Base
+from models.movie import Movie as MovieModel
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
 app.version = "0.0.1"
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+Base.metadata.create_all(bind=engine)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -92,7 +96,10 @@ def get_movie_category(category: str = Query(max_length=30)) -> Movie:
 
 @app.post('/movies/', tags = ['Movies'], response_model = dict, status_code= 201)
 def create_movie(movie: Movie) -> dict:
-	movies.append(movie)
+	db = Session()
+	new_movie = MovieModel(**movie.dict())
+	db.add(new_movie)
+	db.commit()
 	return JSONResponse(status_code = 201, content={"message": "Movie created successfully"})
 
 @app.put('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)

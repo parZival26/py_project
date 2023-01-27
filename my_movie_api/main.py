@@ -10,28 +10,19 @@ from config.database import Session, engine, Base
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import SQLAlchemyError
-
+from middlewares.error_handler import ErrorHandler
+from middlewares.jwt_bearer import JWTBearer
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
 app.version = "0.0.1"
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.add_middleware(ErrorHandler)
+
 Base.metadata.create_all(bind=engine)
 
 templates = Jinja2Templates(directory="templates")
-
-class JWTBearer(HTTPBearer):
-	async def __call__(self, request: Request) :
-		auth = await super().__call__(request)
-		data = validate_token(auth.credentials)
-		if data['email'] != "admin@gmail.com" :
-			raise HTTPException(status_code=403, detail="Invalid Credentials")
-
-class MovieNotFoundError(Exception):
-	status_code = 404
-	detail = "Movie not found"
-	
 
 class User(BaseModel):
 	email:str
@@ -96,11 +87,14 @@ def get_moives() -> List[Movie]:
 
 @app.get('/movies/{id}', tags = ['Movies'], response_model = Movie)
 def get_movie(id: int = Path(ge= 1, le=2000)) -> Movie:
-	db = Session()
-	result = db.query(MovieModel).filter(MovieModel.id == id).first()
-	if not result:
-		return JSONResponse(status_code=404, content={"message": "Movie not found"})
-	return JSONResponse(content=jsonable_encoder(result), status_code=200) 
+	try:
+		db = Session
+		result = db.query(MovieModel).filter(MovieModel.id == id).first()
+		if not result:
+			return JSONResponse(status_code=404, content={"error": "Movie not found"})
+		return JSONResponse(content=jsonable_encoder(result), status_code=200) 
+	except SQLAlchemyError as e:
+		return JSONResponse(status_code=400, content={"error": str(e)})
 
 @app.get('/movies/', tags = ['Movies'], response_model = Movie)
 def get_movie_category(category: str = Query(max_length=30)) -> Movie:
@@ -138,8 +132,6 @@ def modify_movies(id: int, movie: Movie) -> dict:
 		return {"message": "movie modified successfully"}
 	except SQLAlchemyError as e:
 		return JSONResponse(status_code=400, content={"error": str(e)})
-	except MovieNotFoundError as e:
-		return JSONResponse(status_code=404, content={"error": str(e)})
 
 @app.delete('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)
 def delete_movie(id: int) -> dict:
@@ -153,5 +145,3 @@ def delete_movie(id: int) -> dict:
 		return {"message": "movie deleted successfully"}
 	except SQLAlchemyError as e:
 		return JSONResponse(status_code=400, content={"error": str(e)})
-	except MovieNotFoundError as e:
-		return JSONResponse(status_code=404, content={"error": str(e)})

@@ -9,6 +9,8 @@ from fastapi.security import HTTPBearer
 from config.database import Session, engine, Base
 from models.movie import Movie as MovieModel
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.exc import SQLAlchemyError
+
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -25,6 +27,11 @@ class JWTBearer(HTTPBearer):
 		data = validate_token(auth.credentials)
 		if data['email'] != "admin@gmail.com" :
 			raise HTTPException(status_code=403, detail="Invalid Credentials")
+
+class MovieNotFoundError(Exception):
+	status_code = 404
+	detail = "Movie not found"
+	
 
 class User(BaseModel):
 	email:str
@@ -105,30 +112,46 @@ def get_movie_category(category: str = Query(max_length=30)) -> Movie:
 
 @app.post('/movies/', tags = ['Movies'], response_model = dict, status_code= 201)
 def create_movie(movie: Movie) -> dict:
-	db = Session()
-	new_movie = MovieModel(**movie.dict())
-	db.add(new_movie)
-	db.commit()
-	return JSONResponse(status_code = 201, content={"message": "Movie created successfully"})
+	try:
+		db = Session()
+		new_movie = MovieModel(**movie.dict())
+		db.add(new_movie)
+		db.commit()
+		return JSONResponse(status_code = 201, content={"message": "Movie created successfully"})
+	except SQLAlchemyError as e:
+		return JSONResponse(status_code=400, content={"error": str(e)})
+
 
 @app.put('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)
 def modify_movies(id: int, movie: Movie) -> dict:
-	for i in movies:
-		if i["id"] == id:
-			i["title"] = movie.title
-			i["overview"] = movie.overview
-			i["year"] = movie.year
-			i["rating"] = movie.rating
-			i["category"] = movie.category
-			return JSONResponse(status_code = 200, content = movies)
-		else:
-			return JSONResponse(status_code = 404, content = {"message": "Movie not found"})
+	try:
+		db = Session()
+		result = db.query(MovieModel).filter(MovieModel.id == id).first()
+		if not result:
+			return JSONResponse(status_code=404, content={"messa": "movie not found"})
+		result.title = movie.title
+		result.overview = movie.overview
+		result.year = movie.year
+		result.rating = movie.rating
+		result.category = movie.category
+		db.commit()
+		return {"message": "movie modified successfully"}
+	except SQLAlchemyError as e:
+		return JSONResponse(status_code=400, content={"error": str(e)})
+	except MovieNotFoundError as e:
+		return JSONResponse(status_code=404, content={"error": str(e)})
 
 @app.delete('/movies/{id}', tags=['Movies'], response_model = dict, status_code=200)
 def delete_movie(id: int) -> dict:
-	for i in movies:
-		if i['id'] == id:
-			movies.remove(i)
-			return JSONResponse(status_code = 200, content = {'movie deleted'})
-		else:
-			return JSONResponse(status_code = 404, content = {"message": "Movie not found"})
+	try:
+		db = Session()
+		result = db.query(MovieModel).filter(MovieModel.id == id).first()
+		if not result:
+			return JSONResponse(status_code=404, content={"messa": "movie not found"})
+		db.delete(result)
+		db.commit()
+		return {"message": "movie deleted successfully"}
+	except SQLAlchemyError as e:
+		return JSONResponse(status_code=400, content={"error": str(e)})
+	except MovieNotFoundError as e:
+		return JSONResponse(status_code=404, content={"error": str(e)})

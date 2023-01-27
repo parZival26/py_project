@@ -8,6 +8,7 @@ from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
 from config.database import Session, engine, Base
 from models.movie import Movie as MovieModel
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
 app.title = "Mi aplicacion con FastAPI"
@@ -82,17 +83,25 @@ def login(user: User):
 
 @app.get('/movies', tags = ['Movies'], response_model= List[Movie], status_code = 200, dependencies=[Depends(JWTBearer())])
 def get_moives() -> List[Movie]:
-    return JSONResponse(status_code = 200, content=movies)
+	db = Session()
+	result = db.query(MovieModel).all()
+	return JSONResponse(status_code = 200, content=jsonable_encoder(result))
 
 @app.get('/movies/{id}', tags = ['Movies'], response_model = Movie)
 def get_movie(id: int = Path(ge= 1, le=2000)) -> Movie:
-	movie = list(filter(lambda m: m["id"] == id, movies))
-	return JSONResponse(content=movie) if len(movie) > 0 else JSONResponse(status_code= 404,content={"message": "Movie not found"})
+	db = Session()
+	result = db.query(MovieModel).filter(MovieModel.id == id).first()
+	if not result:
+		return JSONResponse(status_code=404, content={"message": "Movie not found"})
+	return JSONResponse(content=jsonable_encoder(result), status_code=200) 
 
 @app.get('/movies/', tags = ['Movies'], response_model = Movie)
 def get_movie_category(category: str = Query(max_length=30)) -> Movie:
-	movie = list(filter(lambda x: x["category"] == category, movies))
-	return JSONResponse(content=movie) if len(movie) > 0 else JSONResponse(status_code= 404,content= {"message": "Movie not found"})
+	db = Session()
+	result = db.query(MovieModel).filter(MovieModel.category == category).all()
+	if not result:
+		return JSONResponse(status_code=404, content={"message": "Movie not found"})
+	return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 @app.post('/movies/', tags = ['Movies'], response_model = dict, status_code= 201)
 def create_movie(movie: Movie) -> dict:

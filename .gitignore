@@ -191,3 +191,6 @@ my_movie_api/static/img/*.png
 my_movie_api/static/img/*.jpg
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python
+
+#ignore pruebas
+prueba.py
